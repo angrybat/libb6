@@ -9,3 +9,7 @@ compile_commands.json
 CTestTestfile.cmake
 .idea
 cmake-build-debug
+
+# Rust
+target/
+cargo.lock
