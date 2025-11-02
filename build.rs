@@ -2,6 +2,7 @@ fn main() {
     // generate and compile cxx bridge + compile DeviceBridge.cc
     cxx_build::bridge("src/lib.rs")
         .file("src/DeviceBridge.cc")
+        .file("include/b6/Device.cc")
         .include("include")
         .include("/usr/include/libusb-1.0")
         .flag_if_supported("-std=c++14")
