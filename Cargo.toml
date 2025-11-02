@@ -1,0 +1,11 @@
+[package]
+name = "libb6"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[dependencies]
+cxx = "1.0.187"
+
+[build-dependencies]
+cxx-build = "1.0.187"
