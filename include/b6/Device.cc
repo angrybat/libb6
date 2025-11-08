@@ -19,24 +19,71 @@
 #include "Device.hh"
 
 namespace b6 {
-  Device::Device() {
-    int err = libusb_init(&m_libusbCtx);
+  class LibusbTransport : public UsbTransport {
+  public:
+    int init(libusb_context **ctx) override {
+      return libusb_init(ctx);
+    }
+
+    libusb_device_handle* openDevice(libusb_context *ctx, uint16_t vendorId, uint16_t productId) override {
+      return libusb_open_device_with_vid_pid(ctx, vendorId, productId);
+    }
+
+    int kernelDriverActive(libusb_device_handle *dev_handle, int interfaceNumber) override {
+      return libusb_kernel_driver_active(dev_handle, interfaceNumber);
+    }
+
+    int detachKernelDriver(libusb_device_handle *dev_handle, int interfaceNumber) override {
+      return libusb_detach_kernel_driver(dev_handle, interfaceNumber);
+    }
+
+    int claimInterface(libusb_device_handle *dev_handle, int interfaceNumber) override {
+      return libusb_claim_interface(dev_handle, interfaceNumber);
+    }
+
+    int releaseInterface(libusb_device_handle *dev_handle, int interfaceNumber) override {
+      return libusb_release_interface(dev_handle, interfaceNumber);
+    }
+
+    int attachKernelDriver(libusb_device_handle *dev_handle, int interfaceNumber) override {
+      return libusb_attach_kernel_driver(dev_handle, interfaceNumber);
+    }
+
+    void closeDevice(libusb_device_handle *dev_handle) override {
+      libusb_close(dev_handle);
+    }
+
+    void exit(libusb_context *ctx) override {
+      libusb_exit(ctx);
+    }
+
+    int interruptTransfer(libusb_device_handle *dev_handle, unsigned char endpoint, unsigned char *data, int length,
+      int *actual_length, unsigned int timeout) override {
+      return libusb_interrupt_transfer(dev_handle, endpoint, data, length, actual_length, timeout);
+    }
+  };
+
+  Device::Device(std::unique_ptr<UsbTransport> transport) : m_transport(std::move(transport)) {
+    if (m_transport == nullptr) {
+      m_transport = std::make_unique<LibusbTransport>();
+    }
+    int err = m_transport.init(&m_libusbCtx);
     if (err != 0) {
       throw std::runtime_error("libusb err: " + std::to_string(err));
     }
-    m_dev = libusb_open_device_with_vid_pid(m_libusbCtx, B6_VENDOR_ID, B6_PRODUCT_ID);
+    m_dev = m_transport.openDevice(m_libusbCtx, B6_VENDOR_ID, B6_PRODUCT_ID);
     if (m_dev == nullptr) {
       throw std::runtime_error("cannot find/open b6 device");
     }
 
-    if (libusb_kernel_driver_active(m_dev, 0) == 1) {
+    if (m_transport.kernelDriverActive(m_dev, 0) == 1) {
       m_hadKernelDriver = true;
-      err = libusb_detach_kernel_driver(m_dev, 0);
+      err = m_transport.detachKernelDriver(m_dev, 0);
       if (err != 0) {
         throw std::runtime_error("cannot detach kernel driver, err: " + std::to_string(err));
       }
     }
-    err = libusb_claim_interface(m_dev, 0);
+    err = m_transport.claimInterface(m_dev, 0);
     if (err != 0) {
       throw std::runtime_error("cannot claim interface 0, err: " + std::to_string(err));
     }
@@ -46,13 +93,13 @@ namespace b6 {
 
   Device::~Device() {
     if (m_dev != nullptr) {
-      libusb_release_interface(m_dev, 0);
+      m_transport.releaseInterface(m_dev, 0);
       if (m_hadKernelDriver) {
-        libusb_attach_kernel_driver(m_dev, 0);
+        m_transport.attachKernelDriver(m_dev, 0);
       }
-      libusb_close(m_dev);
+      m_transport.closeDevice(m_dev);
     }
-    libusb_exit(m_libusbCtx);
+    m_transport.exit(m_libusbCtx);
   }
 
   SysInfo Device::getSysInfo() {
@@ -109,13 +156,13 @@ namespace b6 {
   Packet Device::m_read() {
     std::vector<uint8_t> buf(64);
     int len = 0;
-    libusb_interrupt_transfer(m_dev, 0x81, &buf[0], 64, &len, 200);
+    m_transport.interruptTransfer(m_dev, 0x81, &buf[0], 64, &len, 200);
     return Packet(buf);
   }
 
   void Device::m_write(Packet packet) {
     int len = 0;
-    libusb_interrupt_transfer(m_dev, 0x01, packet.getBuffer(), packet.getSize(), &len, 200);
+    m_transport.interruptTransfer(m_dev, 0x01, packet.getBuffer(), packet.getSize(), &len, 200);
   }
 
   Packet Device::m_sendCommand(CMD cmd) {

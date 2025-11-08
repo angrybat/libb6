@@ -51,9 +51,24 @@ namespace b6 {
     uint16_t chargeCurrent, dischargeCurrent, cellDischargeVoltage, endVoltage, trickleCurrent;
   };
 
+  struct UsbTransport {
+    virtual ~UsbTransport() = default;
+    virtual int init(libusb_context **ctx) = 0;
+    virtual libusb_device_handle* openDevice(libusb_context *ctx, uint16_t vendorId, uint16_t productId) = 0;
+    virtual int kernelDriverActive(libusb_device_handle *dev_handle, int interfaceNumber) = 0;
+    virtual int detachKernelDriver(libusb_device_handle *dev_handle, int interfaceNumber) = 0;
+    virtual int claimInterface(libusb_device_handle *dev_handle, int interfaceNumber) = 0;
+    virtual int releaseInterface(libusb_device_handle *dev_handle, int interfaceNumber) = 0;
+    virtual int attachKernelDriver(libusb_device_handle *dev_handle, int interfaceNumber) = 0;
+    virtual void closeDevice(libusb_device_handle *dev_handle) = 0;
+    virtual void exit(libusb_context *ctx) = 0;
+    virtual int interruptTransfer(libusb_device_handle *dev_handle, unsigned char endpoint, unsigned char *data, int length,
+      int *actual_length, unsigned int timeout) = 0;
+  };
+
   class Device {
   public:
-    Device();
+    Device(std::unique_ptr<UsbTransport> transport = nullptr);
     ~Device();
     SysInfo getSysInfo();
     ChargeInfo getChargeInfo();
