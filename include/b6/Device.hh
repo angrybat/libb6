@@ -26,6 +26,7 @@
 #include "Packet.hh"
 #include "Enum.hh"
 #include "Error.hh"
+#include <memory>
 
 #define B6_VENDOR_ID 0x0000
 #define B6_PRODUCT_ID 0x0001
@@ -95,6 +96,7 @@ namespace b6 {
     static bool isBatteryLi(BATTERY_TYPE type) { return type >= BATTERY_TYPE::LIPO && type <= BATTERY_TYPE::LIHV; };
     static bool isBatteryNi(BATTERY_TYPE type) { return type == BATTERY_TYPE::NIMH || type == BATTERY_TYPE::NICD; };
   private:
+    std::unique_ptr<UsbTransport> m_transport; 
     libusb_context *m_libusbCtx{};
     libusb_device_handle *m_dev;
     bool m_hadKernelDriver = false;

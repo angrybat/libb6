@@ -65,25 +65,25 @@ namespace b6 {
 
   Device::Device(std::unique_ptr<UsbTransport> transport) : m_transport(std::move(transport)) {
     if (m_transport == nullptr) {
-      m_transport = std::make_unique<LibusbTransport>();
+      m_transport = std::unique_ptr<LibusbTransport>();
     }
-    int err = m_transport.init(&m_libusbCtx);
+    int err = m_transport->init(&m_libusbCtx);
     if (err != 0) {
       throw std::runtime_error("libusb err: " + std::to_string(err));
     }
-    m_dev = m_transport.openDevice(m_libusbCtx, B6_VENDOR_ID, B6_PRODUCT_ID);
+    m_dev = m_transport->openDevice(m_libusbCtx, B6_VENDOR_ID, B6_PRODUCT_ID);
     if (m_dev == nullptr) {
       throw std::runtime_error("cannot find/open b6 device");
     }
 
-    if (m_transport.kernelDriverActive(m_dev, 0) == 1) {
+    if (m_transport->kernelDriverActive(m_dev, 0) == 1) {
       m_hadKernelDriver = true;
-      err = m_transport.detachKernelDriver(m_dev, 0);
+      err = m_transport->detachKernelDriver(m_dev, 0);
       if (err != 0) {
         throw std::runtime_error("cannot detach kernel driver, err: " + std::to_string(err));
       }
     }
-    err = m_transport.claimInterface(m_dev, 0);
+    err = m_transport->claimInterface(m_dev, 0);
     if (err != 0) {
       throw std::runtime_error("cannot claim interface 0, err: " + std::to_string(err));
     }
@@ -93,13 +93,13 @@ namespace b6 {
 
   Device::~Device() {
     if (m_dev != nullptr) {
-      m_transport.releaseInterface(m_dev, 0);
+      m_transport->releaseInterface(m_dev, 0);
       if (m_hadKernelDriver) {
-        m_transport.attachKernelDriver(m_dev, 0);
+        m_transport->attachKernelDriver(m_dev, 0);
       }
-      m_transport.closeDevice(m_dev);
+      m_transport->closeDevice(m_dev);
     }
-    m_transport.exit(m_libusbCtx);
+    m_transport->exit(m_libusbCtx);
   }
 
   SysInfo Device::getSysInfo() {
@@ -156,13 +156,13 @@ namespace b6 {
   Packet Device::m_read() {
     std::vector<uint8_t> buf(64);
     int len = 0;
-    m_transport.interruptTransfer(m_dev, 0x81, &buf[0], 64, &len, 200);
+    m_transport->interruptTransfer(m_dev, 0x81, &buf[0], 64, &len, 200);
     return Packet(buf);
   }
 
   void Device::m_write(Packet packet) {
     int len = 0;
-    m_transport.interruptTransfer(m_dev, 0x01, packet.getBuffer(), packet.getSize(), &len, 200);
+    m_transport->interruptTransfer(m_dev, 0x01, packet.getBuffer(), packet.getSize(), &len, 200);
   }
 
   Packet Device::m_sendCommand(CMD cmd) {
