@@ -65,7 +65,7 @@ namespace b6 {
 
   Device::Device(std::unique_ptr<UsbTransport> transport) : m_transport(std::move(transport)) {
     if (m_transport == nullptr) {
-      m_transport = std::unique_ptr<LibusbTransport>();
+       m_transport.reset(new LibusbTransport());
     }
     int err = m_transport->init(&m_libusbCtx);
     if (err != 0) {
