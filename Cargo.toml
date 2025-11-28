@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "rb6",
+    "mockb6",
+]
+resolver = "3"
