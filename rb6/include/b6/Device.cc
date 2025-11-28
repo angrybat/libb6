@@ -59,7 +59,7 @@ namespace b6 {
     Packet res = m_sendCommand(CMD::GET_SYS_INFO);
     res.skip(4);
 
-    SysInfo info = {0};
+    SysInfo info = {};
     info.cycleTime = res.readU8();
     info.timeLimitOn = res.readU8();
     info.timeLimit = res.readU16();
@@ -80,7 +80,7 @@ namespace b6 {
   }
 
   ChargeInfo Device::getChargeInfo() {
-    ChargeInfo info = {0};
+    ChargeInfo info = {};
 
     Packet res = m_sendCommand(CMD::GET_CHARGE_INFO);
     res.skip(4);
@@ -170,6 +170,7 @@ namespace b6 {
       case ERROR::BREAK_DOWN:             throw ErrorBreakDown();
       case ERROR::INPUT_FAIL:             throw ErrorInputFail();
       case ERROR::UNKNOWN:                throw ErrorUnknown();
+      default:                            throw ErrorUnknown();
     }
   }
 
