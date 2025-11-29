@@ -5,15 +5,18 @@
 
 DeviceHandle::DeviceHandle(std::unique_ptr<b6::Device> d) : device(std::move(d)) {}
 
-std::unique_ptr<DeviceHandle> DeviceHandle::new_device() {
+std::unique_ptr<DeviceHandleResult> DeviceHandle::new_device() {
+  auto device_handle_result = std::make_unique<DeviceHandleResult>();
   try {
-    auto d = std::make_unique<b6::Device>();
-    return std::make_unique<DeviceHandle>(std::move(d));
+    auto device = std::make_unique<b6::Device>();
+    device_handle_result -> device_handle = std::make_unique<DeviceHandle>(std::move(device));
+    device_handle_result -> error = nullptr;
   } catch (const std::exception& e) {
-    std::cerr << "Could not create device: " << e.what() << std::endl;
-    return nullptr;
+    device_handle_result -> device_handle = nullptr;
+    device_handle_result -> error = std::string("Could not create device: ") + e.what();
   } catch (...) {
-    std::cerr << "Could not create device due to unknown exception" << std::endl;
-    return nullptr;
+    device_handle_result -> device_handle = nullptr;
+    device_handle_result -> error = "Could not create device due to unknown exception";
   }
+  return device_handle_result;
 }
