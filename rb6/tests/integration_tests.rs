@@ -3,7 +3,7 @@ mod new_device {
     use mockb6;
 
     #[test]
-    fn returns_error_when_libusb_init_does_not_return_0() {
+    fn returns_error_when_cant_initalise_libusb() {
         {
             let mut mock = mockb6::MOCK.lock().unwrap();
             mock.init_return = -1;
@@ -21,7 +21,7 @@ mod new_device {
     }
     
     #[test]
-    fn returns_error_when_libusb_open_with_vid_pid_returns_nullptr() {
+    fn returns_error_when_libusb_cant_open_with_vid_pid() {
         {
             let mut mock = mockb6::MOCK.lock().unwrap();
             mock.init_return = 0;
