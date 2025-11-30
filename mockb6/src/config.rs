@@ -11,6 +11,7 @@ pub struct MockConfig {
     pub release_return: c_int,
     pub attach_return: c_int,
     pub interrupt_return: c_int,
+    pub print_debug: bool,
 }
 
 impl Default for MockConfig {
@@ -24,6 +25,7 @@ impl Default for MockConfig {
             release_return: 0,
             attach_return: 0,
             interrupt_return: 1,
+            print_debug: false,
         }
     }
 }
