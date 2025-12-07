@@ -1,6 +1,8 @@
 mod new_device {
     use rb6::new_device;
-    use mockb6;
+    use rb6::get_dev_info_command_buffer;
+    use mockb6::setup_mock;
+    use rstest::rstest;
 
     #[test]
     fn returns_error_when_cant_initalise_libusb() {
@@ -22,11 +24,10 @@ mod new_device {
     
     #[test]
     fn returns_error_when_libusb_cant_open_with_vid_pid() {
-        {
-            let mut mock = mockb6::MOCK.lock().unwrap();
+        setup_mock(|mock| {
             mock.init_return = 0;
             mock.open_return = 0;
-        }
+        });
     
         let mut device_handle_result = new_device();
     
@@ -41,13 +42,12 @@ mod new_device {
 
     #[test]
     fn returns_error_when_libusb_cant_detach_kernel_driver() {
-        {
-            let mut mock = mockb6::MOCK.lock().unwrap();
+        setup_mock(|mock| {
             mock.init_return = 0;
             mock.open_return = 0x1;
             mock.detach_return = -5;
             mock.kernel_driver_active = 1;
-        }
+        });
     
         let mut device_handle_result = new_device();
     
@@ -62,13 +62,12 @@ mod new_device {
 
     #[test]
     fn returns_error_when_libusb_cant_claim_interface() {
-        {
-            let mut mock = mockb6::MOCK.lock().unwrap();
+        setup_mock(|mock| {
             mock.init_return = 0;
             mock.open_return = 0x1;
             mock.kernel_driver_active = 0;
             mock.claim_return = -3;
-        }
+        });
     
         let mut device_handle_result = new_device();
     

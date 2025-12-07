@@ -57,3 +57,12 @@ impl Default for MockConfig {
 lazy_static::lazy_static! {
     pub static ref MOCK: Mutex<MockConfig> = Mutex::new(MockConfig::default());
 }
+
+pub fn setup_mock<F>(configure: F)
+where
+    F: FnOnce(&mut MockConfig),
+{
+    let mut mock = MOCK.lock().unwrap();
+    *mock = MockConfig::default();
+    configure(&mut mock);
+}
