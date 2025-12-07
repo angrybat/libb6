@@ -12,3 +12,4 @@ cxx-build = "1.0.187"
 
 [dev-dependencies]
 mockb6 = { path = "../mockb6" }
+rstest = "0.26.1"
