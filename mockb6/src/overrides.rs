@@ -99,22 +99,52 @@ pub unsafe extern "C" fn libusb_interrupt_transfer(
     transferred: *mut c_int,
     _timeout: c_uint,
 ) -> c_int {
-    if MOCK.lock().unwrap().print_debug {
-        eprintln!("[mock] libusb_interrupt_transfer");
+    let mut mock = MOCK.lock().unwrap();
+
+    if mock.print_debug {
+        eprintln!("[mock] libusb_interrupt_transfer: endpoint: {:02X}, len: {}, transferred: {:p}, timeout: {}", _endpoint, _len, transferred, _timeout);
     }
 
-    let mock = MOCK.lock().unwrap();
+    let is_read = (_endpoint & 0x80) != 0;
 
-    // Write mock data if buffer is valid
-    if !data.is_null() && mock.interrupt_return > 0 {
-        unsafe {
-            *data = 0xAB;
+    if is_read {
+        let bytes = mock.get_next_read(_len as usize);
+        if mock.print_debug {
+            eprintln!("[mock] read data: {:02X?}", bytes);
         }
-    }
-
-    if !transferred.is_null() {
-        unsafe {
-            *transferred = mock.interrupt_return;
+        let copy_len = std::cmp::min(_len as usize, bytes.len());
+        if mock.print_debug {
+            eprintln!("[mock] copying {} bytes to data ptr {:p}", copy_len, data);
+        }
+        if !data.is_null() && copy_len > 0 {
+            if mock.print_debug {
+                eprintln!("[mock] performing copy_nonoverlapping");
+            }
+            unsafe {
+                std::ptr::copy_nonoverlapping(bytes.as_ptr(), data, copy_len);
+            }
+            if mock.print_debug {
+                eprintln!("[mock] copy_nonoverlapping complete");
+            }
+        }
+        if !transferred.is_null() {
+            if mock.print_debug {
+                eprintln!("[mock] setting transferred to {}", copy_len);
+            }
+            unsafe { *transferred = copy_len as c_int; }
+            if mock.print_debug {
+                eprintln!("[mock] set transferred to {}", copy_len);
+            }
+        }
+    } else {
+        if mock.print_debug {
+            eprintln!("[mock] writing data: {:02X?}", data);
+        }
+        if !data.is_null() {
+            let slice: &[u8] = unsafe { std::slice::from_raw_parts(data, _len as usize) };
+            mock.record_write(slice);
+        } else {
+            eprintln!("[mock] WARNING: data pointer is null, cannot record write");
         }
     }
 
