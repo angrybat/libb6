@@ -18,7 +18,7 @@ pub unsafe extern "C" fn libusb_open_device_with_vid_pid(
     if MOCK.lock().unwrap().print_debug {
         eprintln!("[mock] libusb_open_device_with_vid_pid");
     }
-    MOCK.lock().unwrap().open_return as *mut libc::c_void
+    MOCK.lock().unwrap().open_return as *mut c_void
 }
 
 #[unsafe(no_mangle)]
@@ -77,10 +77,11 @@ pub unsafe extern "C" fn libusb_attach_kernel_driver(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn libusb_close(_dev: *mut c_void) {
+pub unsafe extern "C" fn libusb_close(_dev: *mut c_void) -> c_int {
     if MOCK.lock().unwrap().print_debug {
         eprintln!("[mock] libusb_close");
     }
+    return 0;
 }
 
 #[unsafe(no_mangle)]
