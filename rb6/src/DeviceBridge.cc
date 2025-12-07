@@ -10,7 +10,6 @@ std::unique_ptr<DeviceHandleResult> DeviceHandle::new_device() {
   try {
     auto device = std::make_unique<b6::Device>();
     device_handle_result -> device_handle = std::make_unique<DeviceHandle>(std::move(device));
-    device_handle_result -> error = nullptr;
   } catch (const std::exception& e) {
     device_handle_result -> device_handle = nullptr;
     device_handle_result -> error = std::string("Could not create device: ") + e.what();
